@@ -72,7 +72,6 @@ CREATE TABLE Users (
     Gender TEXT CHECK (Gender IN ('male', 'female', 'other')) NOT NULL
 );
 
--- Создание таблицы анализов (analysis)
 CREATE TABLE Analysis (
     ID SERIAL PRIMARY KEY,
     Name TEXT NOT NULL,
@@ -83,20 +82,30 @@ CREATE TABLE Analysis (
     Biomaterial TEXT NOT NULL
 );
 
--- Создание таблицы заказов
+CREATE TABLE Addresses (
+    ID SERIAL PRIMARY KEY,
+    Address TEXT NOT NULL,
+    Longitude DOUBLE PRECISION,
+    Latitude DOUBLE PRECISION,
+    Elevation DOUBLE PRECISION,
+    Apartment TEXT NOT NULL,
+    Entrance TEXT NOT NULL,
+    Floor INT NOT NULL,
+    Intercom TEXT
+);
+
 CREATE TABLE Orders (
     ID SERIAL PRIMARY KEY,
     UserID INT NOT NULL,
-    Address TEXT NOT NULL,
+    AddressID INT NOT NULL,
     OrderDatetime TIMESTAMP NOT NULL,
     PhoneNumber bigint NOT NULL,
     Comment TEXT,
     TotalAmount double precision NOT NULL,
-    FOREIGN KEY (UserID) REFERENCES Users(ID)
-    -- Удаление ссылки на analysis_id, поскольку связь между заказами и анализами реализована через таблицу test_orders
+    FOREIGN KEY (UserID) REFERENCES Users(ID),
+    FOREIGN KEY (AddressID) REFERENCES Addresses(ID)
 );
 
--- Создание таблицы связи анализов и заказов (test_orders)
 CREATE TABLE AnalysisOrders (
     ID SERIAL PRIMARY KEY,
     AnalysisID INT NOT NULL,

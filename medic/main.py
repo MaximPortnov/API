@@ -6,9 +6,11 @@ import secrets
 from datetime import date
 from typing import List, Optional
 
-MAX_LENGTH = 256
+# uvicorn main:app --reload --host localhost --port 3426
 
-connection = psycopg2.connect(dbname="medic", host="localhost", user="postgres", password="sql@sql", port="5433")
+MAX_LENGTH = 256 
+
+connection = psycopg2.connect(dbname="medic", host="postgres", user="postgres", password="sql@sql", port="5432")
 connection.autocommit = True
 cursor = connection.cursor()
 
@@ -53,13 +55,23 @@ class AnalysisGet(BaseModel):
     preparation: str
     biomaterial: str
 
+class AddressCreate(BaseModel):
+    address: str
+    longitude: Optional[float] = None
+    latitude: Optional[float] = None
+    elevation: Optional[float] = None
+    apartment: str
+    entrance: str
+    floor: int
+    intercom: Optional[str] = None
+
 class AnalysisOrder(BaseModel):
     analysis_id: int
     user_id: int 
 
 class OrderCreate(BaseModel):
     user_id: int
-    address: str
+    address_id: int
     order_datetime: date
     phone_number: str
     comment: Optional[str] = None
@@ -146,12 +158,25 @@ async def get_all_analyses():
     ]
     return analyses
 
+@app.post("/addresses/")
+async def create_address(address: AddressCreate):
+    # Здесь должна быть логика для вставки данных в базу данных
+    cursor.execute(
+        """
+        INSERT INTO Addresses (Address, Longitude, Latitude, Elevation, Apartment, Entrance, Floor, Intercom) 
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING ID
+        """,
+        (address.address, address.longitude, address.latitude, address.elevation, address.apartment, address.entrance, address.floor, address.intercom)
+    )
+    address_id = cursor.fetchone()[0]
+    return {"message": "Адрес успешно добавлен", "address_id": address_id}
+
 @app.post("/orders/")
 async def create_order(order_data: OrderCreate):
     # Вставка данных о заказе в таблицу Orders и получение ID нового заказа
     cursor.execute(
-        "INSERT INTO Orders (UserID, Address, OrderDatetime, PhoneNumber, Comment, TotalAmount) VALUES (%s, %s, NOW(), %s, %s, 0) RETURNING ID",
-        (order_data.user_id, order_data.address, order_data.phone_number, order_data.comment)
+        "INSERT INTO Orders (UserID, AddressID, OrderDatetime, PhoneNumber, Comment, TotalAmount) VALUES (%s, %s, NOW(), %s, %s, 0) RETURNING ID",
+        (order_data.user_id, order_data.address_id, order_data.phone_number, order_data.comment)
     )
     order_id = cursor.fetchone()[0]
 
