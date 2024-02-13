@@ -1,0 +1,33 @@
+version: '3'
+
+services:
+  postgres:
+    build:
+      context: ./sql
+      dockerfile: Dockerfile
+    environment:
+      POSTGRES_PASSWORD: sql@sql
+    ports:
+      - "5433:5432"
+    container_name: postgres_instance
+
+  taxi:
+    build:
+      context: ./taxi
+      dockerfile: Dockerfile
+    ports:
+      - "3425:3425"
+    container_name: taxi_instance
+    depends_on:
+      - postgres
+  
+  medic:
+    build:
+      context: ./medic
+      dockerfile: Dockerfile
+    ports:
+      - "3426:3426"
+    container_name: medic_instance
+    depends_on:
+      - postgres
+  
