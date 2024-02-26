@@ -36,7 +36,7 @@ services:
       context: ./KitchenMaster
       dockerfile: Dockerfile
     ports:
-      - "9998:9998"
+      - "9999:9999"
     container_name: kitmas_instance
     depends_on:
       - postgres
