@@ -10,7 +10,7 @@ from typing import List, Optional
 
 MAX_LENGTH = 256 
 
-connection = psycopg2.connect(dbname="medic", host="185.221.214.178", user="postgres", password="sql@sql", port="5432")
+connection = psycopg2.connect(dbname="medic", host="postgres", user="postgres", password="sql@sql", port="5432")
 connection.autocommit = True
 cursor = connection.cursor()
 
