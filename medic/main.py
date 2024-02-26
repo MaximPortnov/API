@@ -123,7 +123,7 @@ async def update_user(user_id: int, user_data: UserUpdate):
 
     return {"message": "Данные пользователя успешно обновлены"}
 
-@app.get("/user/{user_id}/", response_model=User)
+@app.get("/user/{user_id}/")
 async def get_user(user_id: int):
     cursor.execute("SELECT ID, Email, FirstName, LastName, Patronymic, DateOfBirth, Gender FROM Users WHERE ID = %s", (user_id,))
     user = cursor.fetchone()
