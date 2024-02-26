@@ -10,7 +10,7 @@ from typing import List, Optional
 
 MAX_LENGTH = 256 
 
-connection = psycopg2.connect(dbname="medic", host="postgres", user="postgres", password="sql@sql", port="5432")
+connection = psycopg2.connect(dbname="medic", host="185.221.214.178", user="postgres", password="sql@sql", port="5432")
 connection.autocommit = True
 cursor = connection.cursor()
 
@@ -124,7 +124,7 @@ async def update_user(user_id: int, user_data: UserUpdate):
 
     return {"message": "Данные пользователя успешно обновлены"}
 
-@app.get("/user/{user_id}/", response_model=User)
+@app.get("/user/{user_id}/")
 async def get_user(user_id: int):
     cursor.execute("SELECT ID, Email, FirstName, LastName, Patronymic, DateOfBirth, Gender FROM Users WHERE ID = %s", (user_id,))
     user = cursor.fetchone()
