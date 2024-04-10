@@ -117,3 +117,10 @@ class User(BaseModel):
 class UserRole(BaseModel):
     id: int
     title: str
+
+class MeasureTypeCreate(BaseModel):
+    title: str
+
+class MeasureTypeModel(BaseModel):
+    id: int
+    title: str

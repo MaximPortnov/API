@@ -264,6 +264,18 @@ async def list_user_roles():
     return roles
 
 
+@app.get("/measure_types/", response_model=List[m.MeasureTypeModel])
+async def get_measure_types():
+    cursor.execute("SELECT id, title FROM \"MeasureType\"")
+    measure_types_data = cursor.fetchall()
+    return [m.MeasureTypeModel(id=row[0], title=row[1]) for row in measure_types_data]
+
+@app.post("/measure_types/", response_model=m.MeasureTypeModel, status_code=201)
+async def create_measure_type(measure_type: m.MeasureTypeCreate):
+    cursor.execute("INSERT INTO \"MeasureType\" (title) VALUES (%s) RETURNING id, title", (measure_type.title,))
+    new_measure_type = cursor.fetchone()
+    connection.commit()
+    return m.MeasureTypeModel(id=new_measure_type[0], title=new_measure_type[1])
 
 
 
