@@ -1,55 +1,22 @@
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, File, Query, UploadFile, status, HTTPException
 from fastapi.responses import FileResponse
 import psycopg2
-from pydantic import BaseModel
-from typing import List, Optional
+import httpx
+from typing import List
+
+import models as m
 
 MAX_LENGTH = 256
 # uvicorn main:app --reload --host 192.168.0.12 --port 3426
-connection = psycopg2.connect(dbname="KitchenMaster", host="postgres", user="postgres", password="sql@sql", port="5432")
+# connection = psycopg2.connect(dbname="KitchenMaster", host="postgres", user="postgres", password="sql@sql", port="5432")
+connection = psycopg2.connect(dbname="KitchenMaster", host="localhost", user="postgres", password="sql@sql", port="5433")
 connection.autocommit = True
 cursor = connection.cursor()
-
-class Ingredient(BaseModel):
-    id: Optional[int]
-    title: str
-    count: int
-    measureType: str
- 
-class RecipeStep(BaseModel):
-    step_num: int
-    step_text: str
-    step_image: Optional[str]
-    
-
-class Recipe(BaseModel):
-    id: Optional[int]
-    title: str
-    cooking_time: Optional[str]
-    kkal: Optional[int]
-    id_CreatorUser: Optional[int]
-    ingredients: List[Ingredient]
-
-class DetailRecipe(BaseModel):
-    id: Optional[int]
-    title: str
-    cooking_time: Optional[str]
-    kkal: Optional[int]
-    id_CreatorUser: Optional[int]
-    ingredients: List[Ingredient]
-    recipe_steps: List[RecipeStep]
-
-class Product(BaseModel):
-    id: Optional[int]
-    title: str
-    product_type: Optional[str]
-
-
 
 app = FastAPI()
 
 @app.get("/products/")
-async def get_recipes() -> List[Product]:
+async def get_recipes() -> m.List[m.Product]:
     cursor.execute("""
     SELECT 
         "Product".id,
@@ -63,7 +30,7 @@ async def get_recipes() -> List[Product]:
     for recipe_data in data:
         id, title, product_type= recipe_data[:3]
 
-        products.append(Product(
+        products.append(m.Product(
             id=id,
             title= title,
             product_type=product_type
@@ -71,9 +38,7 @@ async def get_recipes() -> List[Product]:
     return products
 
 @app.get("/products/{id}")
-async def get_product(
-    id: int
-) -> Product:
+async def get_product(id: int) -> m.Product:
     cursor.execute("""
     SELECT 
         "Product".id,
@@ -85,28 +50,24 @@ async def get_product(
                    """, (id,))
     data = cursor.fetchone()
     id, title, product_type= data[:3]
-    return Product(
+    return m.Product(
             id=id,
             title= title,
             product_type=product_type
         )
 
 @app.get("/recipes/")
-async def get_recipes(
-    products: List[int] = Query(None)
-) -> List[Recipe]:
+async def get_recipes(products: List[int] = Query(None)) -> List[m.Recipe]:
     if(products == None):
         return db_get_recipes()
     return db_get_filtered_recipes(products)
 
 @app.get("/recipes/{id}")
-async def get_recipe(
-    id: int,
-) -> DetailRecipe:
+async def get_recipe(id: int) -> m.DetailRecipe:
     cursor.execute("SELECT * FROM \"Recipe\" Where id = %s", (id,))
     data = cursor.fetchone()
     id, title, cooking_time, kkal, id_CreatorUser = data[:5]
-    return DetailRecipe(
+    return m.DetailRecipe(
         id=id,
         title=title,
         cooking_time=cooking_time.strftime("%H:%M:%S"),
@@ -117,15 +78,11 @@ async def get_recipe(
     )
 
 @app.get("/recipes/{id}/ingredients")
-async def get_ingredients(
-    id: int
-) -> List[Ingredient]:
+async def get_ingredients(id: int) -> List[m.Ingredient]:
     return get_recipe_ingredients(id)
 
 @app.get("/recipes/{id}/steps")
-async def get_steps(
-    id: int
-) -> List[RecipeStep]:
+async def get_steps(id: int) -> List[m.RecipeStep]:
     return get_recipe_steps(id)
 
 
@@ -134,15 +91,107 @@ async def get_image():
     return FileResponse("test3.jpg")
 
 
+@app.post("/upload_image/")
+async def upload_image(file: UploadFile = File(...)):
+    # Используем httpx для отправки файла на другой сервер
+    async with httpx.AsyncClient() as client:
+        # Готовим файл для отправки
+        # Важно! file.file - это файловый объект, который уже открыт,
+        # поэтому мы можем сразу его передать.
+        # file.filename дает нам имя файла для использования в форме.
+        files = {"file": (file.filename, file.file)}
+        # Отправляем файл
+        response = await client.post("https://telegra.ph/upload", files=files)
 
-def db_get_recipes() -> List[Recipe]:
+    # Закрываем файл
+    await file.close()
+
+    # Возвращаем ответ от внешнего сервера
+    return {
+        "path":"https://telegra.ph/file/",
+        "name":response.json()[0]["src"][6::]
+        }
+
+
+@app.get("/product_types/", response_model=List[m.ProductType])
+async def get_product_types() -> List[m.ProductType]:
+    cursor.execute("SELECT id, \"Title\" FROM \"ProductType\"")
+    product_types_data = cursor.fetchall()
+    return [m.ProductType(id=row[0], title=row[1]) for row in product_types_data]
+
+
+@app.post("/product_types/", response_model=m.ProductType, status_code=status.HTTP_201_CREATED)
+async def create_product_type(product_type: m.ProductTypeCreate) -> m.ProductType:
+    # Здесь код для добавления записи в базу данных. Псевдокод ниже.
+    # Предполагается, что у вас есть функция или метод для добавления записи и получения её ID.
+    # Например, используя SQLAlchemy или другой ORM/драйвер базы данных.
+    # Например: new_product_type_id = add_product_type_to_db(product_type.title)
+    
+    # Псевдокод для выполнения запроса. Настоящий код будет зависеть от вашего подключения к БД.
+    cursor.execute("INSERT INTO \"ProductType\" (\"Title\") VALUES (%s) RETURNING id", (product_type.title,))
+    new_product_type_id = cursor.fetchone()[0]
+    
+    # Возвращаем созданный ProductType, включая его новый ID.
+    return m.ProductType(id=new_product_type_id, title=product_type.title)
+
+
+@app.get("/check_product_type/")
+async def check_product_type(title: str) -> dict:
+    cursor.execute("SELECT EXISTS(SELECT 1 FROM \"ProductType\" WHERE \"Title\" = %s)", (title,))
+    exists = cursor.fetchone()[0]
+    
+    if exists:
+        return {"exists": True, "message": f"ProductType with title '{title}' already exists."}
+    else:
+        return {"exists": False, "message": f"ProductType with title '{title}' does not exist."}
+
+
+@app.post("/product/", response_model=m.Product, status_code=status.HTTP_201_CREATED)
+async def create_product(product: m.ProductCreate) -> m.ProductModel:
+    # Проверяем, существует ли тип продукта, к которому мы хотим привязать наш продукт
+    cursor.execute("SELECT EXISTS(SELECT 1 FROM \"ProductType\" WHERE id = %s)", (product.id_productType,))
+    exists = cursor.fetchone()[0]
+    
+    if not exists:
+        raise HTTPException(status_code=404, detail="ProductType not found")
+    
+    # Добавляем продукт в базу данных
+    cursor.execute("INSERT INTO \"Product\" (\"id_productType\", \"Title\") VALUES (%s, %s) RETURNING id", (product.id_productType, product.title))
+    new_product_id = cursor.fetchone()[0]
+    connection.commit()  # Не забудьте подтвердить транзакцию, если используете транзакции
+
+    # Возвращаем созданный продукт
+    return m.ProductModel(id=new_product_id, id_productType=product.id_productType, title=product.title)
+
+@app.post("/products/", response_model=List[m.Product], status_code=status.HTTP_201_CREATED)
+async def create_products(products: List[m.ProductCreate]) -> List[m.ProductModel]:
+    created_products = []
+    for product in products:
+        # Проверяем, существует ли тип продукта, к которому мы хотим привязать наш продукт
+        cursor.execute("SELECT EXISTS(SELECT 1 FROM \"ProductType\" WHERE id = %s)", (product.id_productType,))
+        exists = cursor.fetchone()[0]
+        
+        if not exists:
+            raise HTTPException(status_code=404, detail=f"ProductType with id {product.id_productType} not found")
+        
+        # Добавляем продукт в базу данных
+        cursor.execute("INSERT INTO \"Product\" (\"id_productType\", \"Title\") VALUES (%s, %s) RETURNING id", (product.id_productType, product.title))
+        new_product_id = cursor.fetchone()[0]
+        created_products.append(m.ProductModel(id=new_product_id, id_productType=product.id_productType, title=product.title))
+        
+    connection.commit()  # Подтверждаем транзакцию после добавления всех продуктов
+
+    return created_products
+
+
+def db_get_recipes() -> List[m.Recipe]:
     cursor.execute("SELECT * FROM \"Recipe\";")
     data = cursor.fetchall()
     recipes = []
     for recipe_data in data:
         id, title, cooking_time, kkal, id_CreatorUser = recipe_data[:5]
 
-        recipes.append(Recipe(
+        recipes.append(m.Recipe(
             id=id,
             title= title,
             cooking_time= cooking_time.strftime("%H:%M:%S"),
@@ -152,11 +201,11 @@ def db_get_recipes() -> List[Recipe]:
         ))
     return recipes
 
-def db_get_filtered_recipes(id_products: List[int]) -> List[Recipe]:
+def db_get_filtered_recipes(id_products: List[int]) -> List[m.Recipe]:
     cursor.execute("""
-SELECT *
-FROM public."Recipe"
-Where (select count(*) from "RecipeIngredient" 
+    SELECT *
+    FROM public."Recipe"
+    Where (select count(*) from "RecipeIngredient" 
 	   where "id_Recipe" = "Recipe".id)
 	   = 
 	   (select count(*) from "RecipeIngredient"
@@ -168,7 +217,7 @@ Where (select count(*) from "RecipeIngredient"
     for recipe_data in data:
         id, title, cooking_time, kkal, id_CreatorUser = recipe_data[:5]
 
-        recipes.append(Recipe(
+        recipes.append(m.Recipe(
             id=id,
             title= title,
             cooking_time= cooking_time.strftime("%H:%M:%S"),
@@ -178,7 +227,7 @@ Where (select count(*) from "RecipeIngredient"
         ))
     return recipes
 
-def get_recipe_steps(recipe_id: int) -> List[RecipeStep]:
+def get_recipe_steps(recipe_id: int) -> List[m.RecipeStep]:
     cursor.execute("""
         SELECT 
             step_num, 
@@ -193,7 +242,7 @@ def get_recipe_steps(recipe_id: int) -> List[RecipeStep]:
     steps = []  
     for data in recipe_step_data:
         step_num, step_text, step_image = data[:3]
-        steps.append(RecipeStep(
+        steps.append(m.RecipeStep(
             step_num=step_num,
             step_text=step_text,
             step_image=step_image
@@ -202,7 +251,7 @@ def get_recipe_steps(recipe_id: int) -> List[RecipeStep]:
 
 
 
-def get_recipe_ingredients(recipe_id: int) -> List[Ingredient]:
+def get_recipe_ingredients(recipe_id: int) -> List[m.Ingredient]:
     cursor.execute("""
         SELECT 
             "Product".id,
@@ -219,10 +268,12 @@ def get_recipe_ingredients(recipe_id: int) -> List[Ingredient]:
     ingredients = []
     for ingredient_data in ingredients_data:
         id, title, measureType_title, count = ingredient_data[:4]
-        ingredients.append(Ingredient(
+        ingredients.append(m.Ingredient(
             id=id,
             title=title,
             count= count,
             measureType=measureType_title
         ))
     return ingredients
+
+

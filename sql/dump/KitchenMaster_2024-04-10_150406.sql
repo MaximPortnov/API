@@ -1,189 +1,9 @@
-CREATE DATABASE taxi
-    WITH
-    OWNER = postgres
-    ENCODING = 'UTF8'
-    LOCALE_PROVIDER = 'libc'
-    CONNECTION LIMIT = -1
-    IS_TEMPLATE = False;
-
-\connect taxi;
-
-CREATE TABLE IF NOT EXISTS public."Users"
-(
-    "UserID" bigint NOT NULL,
-    "UserName" text NOT NULL,
-    "Email" text NOT NULL,
-    "Password" text NOT NULL,
-    "Login" boolean NOT NULL,
-    "Token" text NOT NULL,
-    PRIMARY KEY ("UserID")
-);
-
-ALTER TABLE IF EXISTS public."Users"
-    OWNER to postgres;
-	
-	
-
-CREATE TABLE IF NOT EXISTS public."Cars"
-(
-    "CarID" bigint NOT NULL,
-    "Model" text NOT NULL,
-    "Color" text NOT NULL,
-    "Number" text NOT NULL,
-	"IsFree" boolean NOT NULL,
-    "LocationX" double precision NOT NULL,
-    "LocationY" double precision NOT NULL,
-    PRIMARY KEY ("CarID")
-);
-
-ALTER TABLE IF EXISTS public."Cars"
-    OWNER to postgres;
-
-CREATE TABLE IF NOT EXISTS public."History"
-(
-    "HistoryID" bigint NOT NULL,
-    "UserID" bigint NOT NULL,
-    "CarID" bigint NOT NULL,
-    "TravelTime" time(6) without time zone NOT NULL,
-    PRIMARY KEY ("HistoryID")
-);
-
-ALTER TABLE IF EXISTS public."History"
-    OWNER to postgres;
-
------
-CREATE DATABASE medic
-    WITH
-    OWNER = postgres
-    ENCODING = 'UTF8'
-    LOCALE_PROVIDER = 'libc'
-    CONNECTION LIMIT = -1
-    IS_TEMPLATE = False;
-
-\connect medic;
-
-CREATE TABLE Users (
-    ID SERIAL PRIMARY KEY,
-    Email TEXT UNIQUE NOT NULL,
-    FirstName TEXT NOT NULL,
-    LastName TEXT NOT NULL,
-    Patronymic TEXT,
-    DateOfBirth DATE NOT NULL,
-    Gender TEXT CHECK (Gender IN ('male', 'female', 'other')) NOT NULL
-);
-
-CREATE TABLE Analysis (
-    ID SERIAL PRIMARY KEY,
-    Name TEXT NOT NULL,
-    Cost double precision NOT NULL,
-    DaysToResult INT,
-    Description TEXT,
-    Preparation TEXT,
-    Biomaterial TEXT NOT NULL
-);
-
-CREATE TABLE Addresses (
-    ID SERIAL PRIMARY KEY,
-    Address TEXT NOT NULL,
-    Longitude DOUBLE PRECISION,
-    Latitude DOUBLE PRECISION,
-    Elevation DOUBLE PRECISION,
-    Apartment TEXT NOT NULL,
-    Entrance TEXT NOT NULL,
-    Floor INT NOT NULL,
-    Intercom TEXT
-);
-
-CREATE TABLE Orders (
-    ID SERIAL PRIMARY KEY,
-    UserID INT NOT NULL,
-    AddressID INT NOT NULL,
-    OrderDatetime TIMESTAMP NOT NULL,
-    PhoneNumber bigint NOT NULL,
-    Comment TEXT,
-    TotalAmount double precision NOT NULL,
-    FOREIGN KEY (UserID) REFERENCES Users(ID),
-    FOREIGN KEY (AddressID) REFERENCES Addresses(ID)
-);
-
-CREATE TABLE AnalysisOrders (
-    ID SERIAL PRIMARY KEY,
-    AnalysisID INT NOT NULL,
-    UserID INT NOT NULL,
-    OrderID INT NOT NULL,
-    FOREIGN KEY (AnalysisID) REFERENCES Analysis(ID),
-    FOREIGN KEY (UserID) REFERENCES Users(ID),
-    FOREIGN KEY (OrderID) REFERENCES Orders(ID)
-);
-
--- INSERT INTO Analysis (Name, Cost, DaysToResult, Description, Preparation, Biomaterial)
--- VALUES 
--- ('Клинический анализ крови с лейкоцитарной формулировкой', 690.00, 1, 'Клинический анализ крови – это самое важное комплексное лабораторное исследование при обследовании человека с любым заболеванием. Изменение исследуемых показателей, как правило, происходит задолго до появления видимых симптомов болезни.', 'Кровь следует сдавать утром натощак, днем или вечером – через 4-5 часов после последнего приема пищи. За 1–2 дня до исследования необходимо исключить из рациона продукты с высоким содержанием жиров и алкоголь.', 'Венозная кровь'),
--- ('Биохимический анализ крови', 1200.00, 1, 'Биохимический анализ крови позволяет оценить работу внутренних органов, уровень электролитов, глюкозы и липидов. Это важная часть диагностики состояния здоровья.', 'Необходимо сдавать кровь утром натощак. Исключить прием пищи за 8 часов до сдачи анализа.', 'Венозная кровь'),
--- ('Анализ на гормоны щитовидной железы', 1500.00, 3, 'Анализы на гормоны щитовидной железы необходимы для диагностики ее функций. Определяются уровни ТТГ, Т4 свободного и Т3 свободного.', 'Не требуется специальной подготовки, но желательно сдавать кровь утром.', 'Венозная кровь'),
--- ('Общий анализ мочи', 350.00, 1, 'Общий анализ мочи показывает физические и химические свойства мочи, что важно для диагностики заболеваний почек и мочевыводящих путей.', 'Перед сдачей анализа рекомендуется соблюдать обычный питьевой режим и избегать продуктов, изменяющих цвет мочи.', 'Моча'),
--- ('Исследование на ВИЧ', 950.00, 1, 'Анализ на ВИЧ позволяет выявить антитела к вирусу иммунодефицита человека, что важно для ранней диагностики и лечения.', 'Не требуется специальной подготовки. Рекомендуется сдавать анализ на голодный желудок.', 'Венозная кровь'),
--- ('Генетический тест на предрасположенность к заболеваниям', 4000.00, 14, 'Генетический тест позволяет оценить риск развития наследственных и генетических заболеваний.', 'Специальная подготовка не требуется.', 'Слюна'),
--- ('Анализ на антитела к коронавирусу', 800.00, 2, 'Анализ позволяет оценить наличие и уровень антител к SARS-CoV-2, что важно для понимания иммунного статуса.', 'Не требуется специальной подготовки. Рекомендуется сдавать анализ утром.', 'Венозная кровь'),
--- ('Аллергопробы', 2500.00, 3, 'Аллергопробы позволяют выявить чувствительность к определенным аллергенам, что важно для составления плана лечения аллергии.', 'За 3 дня до теста исключить прием антигистаминных препаратов.', 'Кровь из пальца'),
--- ('Анализ кала на скрытую кровь', 500.00, 2, 'Анализ используется для выявления скрытых кровотечений в желудочно-кишечном тракте, что может указывать на наличие заболеваний.', 'За 3 дня до анализа исключить продукты и лекарства, влияющие на цвет кала.', 'Кал'),
--- ('Спермограмма', 1200.00, 5, 'Спермограмма – это анализ спермы, позволяющий оценить фертильность мужчины.', 'Воздержание от сексуальной активности и мастурбации за 3-5 дней до сдачи анализа.', 'Сперма'),
--- ('Анализ на гепатиты B и C', 1100.00, 1, 'Анализы на гепатиты B и C позволяют выявить вирусы гепатита в крови, что важно для диагностики и лечения.', 'Не требуется специальной подготовки. Рекомендуется сдавать на голодный желудок.', 'Венозная кровь'),
--- ('Глюкозотолерантный тест', 850.00, 1, 'Тест позволяет оценить способность организма усваивать глюкозу, что важно для диагностики сахарного диабета.', 'За 3 дня до исследования придерживаться своего обычного рациона и исключить физические нагрузки за день до теста.', 'Венозная кровь'),
--- ('Анализ на онкомаркеры', 2200.00, 5, 'Анализ на онкомаркеры используется для раннего выявления раковых заболеваний.', 'Рекомендуется сдавать кровь утром натощак.', 'Венозная кровь'),
--- ('Культуральное исследование микрофлоры', 1300.00, 7, 'Культуральное исследование позволяет выявить наличие и чувствительность микроорганизмов к антибиотикам.', 'Специальной подготовки не требуется.', 'Мазок'),
--- ('Анализ на группу крови и резус-фактор', 400.00, 1, 'Определение группы крови и резус-фактора необходимо для переливаний крови, операций и при беременности.', 'Специальная подготовка не требуется.', 'Венозная кровь'),
--- ('Гормональный профиль', 1800.00, 3, 'Гормональный профиль позволяет оценить уровень основных гормонов в организме, что важно для диагностики различных заболеваний.', 'Рекомендуется сдавать кровь утром натощак.', 'Венозная кровь'),
--- ('Анализ на паразитов', 950.00, 2, 'Анализ на паразитов необходим для выявления инфекционных заболеваний, вызванных паразитическими организмами.', 'За день до сдачи исключить прием лекарств и алкоголя.', 'Кал'),
--- ('Исследование уровня витаминов и микроэлементов', 2500.00, 7, 'Анализ позволяет оценить содержание витаминов и микроэлементов в организме, что важно для диагностики гиповитаминоза и других состояний.', 'Специальная подготовка не требуется.', 'Венозная кровь'),
--- ('Цитологическое исследование', 1100.00, 5, 'Цитологическое исследование используется для выявления клеточных аномалий, включая раковые клетки.', 'Специальная подготовка не требуется.', 'Мазок или биопсийный материал');
-
-
--- {
---   "user_id": 2,
---   "address": "asd",
---   "order_datetime": "2024-02-13",
---   "phone_number": "817234678",
---   "comment": "aslknfnbaljkhdf",
---   "analysis_orders": [
---     {
---       "analysis_id": 1,
---       "user_id": 2
---     },
---     {
---       "analysis_id": 2,
---       "user_id": 2
---     },
---     {
---       "analysis_id": 1,
---       "user_id": 3
---     },
---     {
---       "analysis_id": 3,
---       "user_id": 3
---     }
---   ]
--- }
-
-
-
 --
 -- PostgreSQL database dump
 --
 
 -- Dumped from database version 16.2 (Debian 16.2-1.pgdg120+2)
 -- Dumped by pg_dump version 16.1
-
-CREATE DATABASE "KitchenMaster" 
-    WITH
-    OWNER = postgres
-    ENCODING = 'UTF8'
-    LOCALE_PROVIDER = 'libc'
-    CONNECTION LIMIT = -1
-    IS_TEMPLATE = False;
-
-\connect "KitchenMaster";
-
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -1207,4 +1027,210 @@ ALTER TABLE ONLY public."User"
     ADD CONSTRAINT "User_id_userRole_fkey" FOREIGN KEY ("id_userRole") REFERENCES public."UserRole"(id);
 
 
+--
+-- Name: TABLE "Category"; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public."Category" TO dimon;
+
+
+--
+-- Name: SEQUENCE "Category_id_seq"; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON SEQUENCE public."Category_id_seq" TO dimon;
+
+
+--
+-- Name: TABLE "CookStep"; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public."CookStep" TO dimon;
+
+
+--
+-- Name: SEQUENCE "CookStep_id_seq"; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON SEQUENCE public."CookStep_id_seq" TO dimon;
+
+
+--
+-- Name: TABLE "MeasureType"; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public."MeasureType" TO dimon;
+
+
+--
+-- Name: SEQUENCE "MeasureType_id_seq"; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON SEQUENCE public."MeasureType_id_seq" TO dimon;
+
+
+--
+-- Name: TABLE "Product"; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public."Product" TO dimon;
+
+
+--
+-- Name: TABLE "ProductType"; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public."ProductType" TO dimon;
+
+
+--
+-- Name: SEQUENCE "ProductType_id_seq"; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON SEQUENCE public."ProductType_id_seq" TO dimon;
+
+
+--
+-- Name: SEQUENCE "Product_id_seq"; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON SEQUENCE public."Product_id_seq" TO dimon;
+
+
+--
+-- Name: TABLE "Recipe"; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public."Recipe" TO dimon;
+
+
+--
+-- Name: TABLE "RecipeCategory"; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public."RecipeCategory" TO dimon;
+
+
+--
+-- Name: SEQUENCE "RecipeCategory_id_seq"; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON SEQUENCE public."RecipeCategory_id_seq" TO dimon;
+
+
+--
+-- Name: TABLE "RecipeIngredient"; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public."RecipeIngredient" TO dimon;
+
+
+--
+-- Name: SEQUENCE "RecipeIngredient_id_seq"; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON SEQUENCE public."RecipeIngredient_id_seq" TO dimon;
+
+
+--
+-- Name: SEQUENCE "Recipe_id_seq"; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON SEQUENCE public."Recipe_id_seq" TO dimon;
+
+
+--
+-- Name: TABLE "User"; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public."User" TO dimon;
+
+
+--
+-- Name: TABLE "UserCredential"; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public."UserCredential" TO dimon;
+
+
+--
+-- Name: SEQUENCE "UserCredential_id_seq"; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON SEQUENCE public."UserCredential_id_seq" TO dimon;
+
+
+--
+-- Name: TABLE "UserProduct"; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public."UserProduct" TO dimon;
+
+
+--
+-- Name: SEQUENCE "UserProduct_id_seq"; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON SEQUENCE public."UserProduct_id_seq" TO dimon;
+
+
+--
+-- Name: TABLE "UserRecipe"; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public."UserRecipe" TO dimon;
+
+
+--
+-- Name: SEQUENCE "UserRecipe_id_seq"; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON SEQUENCE public."UserRecipe_id_seq" TO dimon;
+
+
+--
+-- Name: TABLE "UserRole"; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public."UserRole" TO dimon;
+
+
+--
+-- Name: SEQUENCE "UserRole_id_seq"; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON SEQUENCE public."UserRole_id_seq" TO dimon;
+
+
+--
+-- Name: SEQUENCE "User_id_seq"; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON SEQUENCE public."User_id_seq" TO dimon;
+
+
+--
+-- Name: DEFAULT PRIVILEGES FOR SEQUENCES; Type: DEFAULT ACL; Schema: public; Owner: postgres
+--
+
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON SEQUENCES TO dimon;
+
+
+--
+-- Name: DEFAULT PRIVILEGES FOR FUNCTIONS; Type: DEFAULT ACL; Schema: public; Owner: postgres
+--
+
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON FUNCTIONS TO dimon;
+
+
+--
+-- Name: DEFAULT PRIVILEGES FOR TABLES; Type: DEFAULT ACL; Schema: public; Owner: postgres
+--
+
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON TABLES TO dimon;
+
+
+--
+-- PostgreSQL database dump complete
+--
 
