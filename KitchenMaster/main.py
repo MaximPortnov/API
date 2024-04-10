@@ -9,8 +9,8 @@ import models as m
 
 MAX_LENGTH = 256
 # uvicorn main:app --reload --host 192.168.0.12 --port 3426
-# connection = psycopg2.connect(dbname="KitchenMaster", host="postgres", user="postgres", password="sql@sql", port="5432")
-connection = psycopg2.connect(dbname="KitchenMaster", host="localhost", user="postgres", password="sql@sql", port="5433")
+connection = psycopg2.connect(dbname="KitchenMaster", host="postgres", user="postgres", password="sql@sql", port="5432")
+# connection = psycopg2.connect(dbname="KitchenMaster", host="localhost", user="postgres", password="sql@sql", port="5433")
 connection.autocommit = True
 cursor = connection.cursor()
 
