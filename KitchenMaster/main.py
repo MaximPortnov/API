@@ -16,7 +16,7 @@ cursor = connection.cursor()
 
 app = FastAPI()
 
-@app.get("/products/")
+@app.get("/products/", tags=["product"])
 async def get_recipes() -> m.List[m.Product]:
     cursor.execute("""
     SELECT 
@@ -38,7 +38,7 @@ async def get_recipes() -> m.List[m.Product]:
         ))
     return products
 
-@app.get("/products/{id}")
+@app.get("/products/{id}", tags=["product"])
 async def get_product(id: int) -> m.Product:
     cursor.execute("""
     SELECT 
@@ -57,13 +57,13 @@ async def get_product(id: int) -> m.Product:
             product_type=product_type
         )
 
-@app.get("/recipes/")
+@app.get("/recipes/", tags=["recipes"])
 async def get_recipes(products: List[int] = Query(None)) -> List[m.Recipe]:
     if(products == None):
         return db_get_recipes()
     return db_get_filtered_recipes(products)
 
-@app.get("/recipes/{id}")
+@app.get("/recipes/{id}", tags=["recipes"])
 async def get_recipe(id: int) -> m.DetailRecipe:
     cursor.execute("SELECT * FROM \"Recipe\" Where id = %s", (id,))
     data = cursor.fetchone()
@@ -78,21 +78,21 @@ async def get_recipe(id: int) -> m.DetailRecipe:
         recipe_steps=[]
     )
 
-@app.get("/recipes/{id}/ingredients")
+@app.get("/recipes/{id}/ingredients", tags=["recipes"])
 async def get_ingredients(id: int) -> List[m.Ingredient]:
     return get_recipe_ingredients(id)
 
-@app.get("/recipes/{id}/steps")
+@app.get("/recipes/{id}/steps", tags=["recipes"])
 async def get_steps(id: int) -> List[m.RecipeStep]:
     return get_recipe_steps(id)
 
 
-@app.get("/image/", responses={200: {"content": {"image/jpg": {}}}})
+@app.get("/image/", tags=["image"], responses={200: {"content": {"image/jpg": {}}}})
 async def get_image():
     return FileResponse("test3.jpg")
 
 
-@app.post("/upload_image/")
+@app.post("/upload_image/", tags=["image"])
 async def upload_image(file: UploadFile = File(...)):
     # Используем httpx для отправки файла на другой сервер
     async with httpx.AsyncClient() as client:
@@ -114,14 +114,14 @@ async def upload_image(file: UploadFile = File(...)):
         }
 
 
-@app.get("/product_types/", response_model=List[m.ProductType])
+@app.get("/product_types/", tags=["product"], response_model=List[m.ProductType])
 async def get_product_types() -> List[m.ProductType]:
     cursor.execute("SELECT id, \"Title\" FROM \"ProductType\"")
     product_types_data = cursor.fetchall()
     return [m.ProductType(id=row[0], title=row[1]) for row in product_types_data]
 
 
-@app.post("/product_types/", response_model=m.ProductType, status_code=status.HTTP_201_CREATED)
+@app.post("/product_types/", tags=["product"], response_model=m.ProductType, status_code=status.HTTP_201_CREATED)
 async def create_product_type(product_type: m.ProductTypeCreate) -> m.ProductType:
     # Здесь код для добавления записи в базу данных. Псевдокод ниже.
     # Предполагается, что у вас есть функция или метод для добавления записи и получения её ID.
@@ -136,7 +136,7 @@ async def create_product_type(product_type: m.ProductTypeCreate) -> m.ProductTyp
     return m.ProductType(id=new_product_type_id, title=product_type.title)
 
 
-@app.get("/check_product_type/")
+@app.get("/check_product_type/", tags=["product"])
 async def check_product_type(title: str) -> dict:
     cursor.execute("SELECT EXISTS(SELECT 1 FROM \"ProductType\" WHERE \"Title\" = %s)", (title,))
     exists = cursor.fetchone()[0]
@@ -147,7 +147,7 @@ async def check_product_type(title: str) -> dict:
         return {"exists": False, "message": f"ProductType with title '{title}' does not exist."}
 
 
-@app.post("/product/", response_model=m.ProductModel, status_code=status.HTTP_201_CREATED)
+@app.post("/product/", tags=["product"], response_model=m.ProductModel, status_code=status.HTTP_201_CREATED)
 async def create_product(product: m.ProductCreate) -> m.ProductModel:
     # Проверяем, существует ли тип продукта, к которому мы хотим привязать наш продукт
     cursor.execute("SELECT EXISTS(SELECT 1 FROM \"ProductType\" WHERE id = %s)", (product.id_productType,))
@@ -164,7 +164,7 @@ async def create_product(product: m.ProductCreate) -> m.ProductModel:
     # Возвращаем созданный продукт
     return m.ProductModel(id=new_product_id, id_productType=product.id_productType, title=product.title)
 
-@app.post("/products/", response_model=List[m.ProductModel], status_code=status.HTTP_201_CREATED)
+@app.post("/products/", tags=["product"], response_model=List[m.ProductModel], status_code=status.HTTP_201_CREATED)
 async def create_products(products: List[m.ProductCreate]) -> List[m.ProductModel]:
     created_products = []
     for product in products:
@@ -185,7 +185,7 @@ async def create_products(products: List[m.ProductCreate]) -> List[m.ProductMode
     return created_products
 
 
-@app.post("/recipes/", response_model=m.RecipeModel, status_code=status.HTTP_201_CREATED)
+@app.post("/recipes/", tags=["recipes"], response_model=m.RecipeModel, status_code=status.HTTP_201_CREATED)
 async def create_recipe(recipe_data: m.RecipeCreate) -> m.RecipeModel:
     # Добавление рецепта в базу данных с новыми полями
     cursor.execute(
@@ -222,7 +222,7 @@ async def create_recipe(recipe_data: m.RecipeCreate) -> m.RecipeModel:
         steps=recipe_data.steps
     )
 
-@app.post("/users/", status_code=status.HTTP_201_CREATED)
+@app.post("/users/", tags=["user"], status_code=status.HTTP_201_CREATED)
 async def create_user(user_data: m.UserCreate):
     # Добавляем пользователя в базу данных
     cursor.execute(
@@ -235,7 +235,7 @@ async def create_user(user_data: m.UserCreate):
     # Возвращаем ID созданного пользователя
     return {"id": new_user_id, "name": user_data.name}
 
-@app.post("/user_roles/", status_code=status.HTTP_201_CREATED)
+@app.post("/user_roles/", tags=["user"], status_code=status.HTTP_201_CREATED)
 async def create_user_role(role_data: m.UserRoleCreate):
     # Добавляем роль пользователя в базу данных
     cursor.execute(
@@ -248,7 +248,7 @@ async def create_user_role(role_data: m.UserRoleCreate):
     # Возвращаем ID и название созданной роли пользователя
     return {"id": new_role_id, "title": role_data.title}
 
-@app.get("/users/", response_model=List[m.User])
+@app.get("/users/", tags=["user"], response_model=List[m.User])
 async def list_users():
     cursor.execute("SELECT id, id_userRole, name, region, birth_date, created_date FROM \"User\"")
     users_data = cursor.fetchall()
@@ -256,7 +256,7 @@ async def list_users():
     return users
 
 
-@app.get("/user_roles/", response_model=List[m.UserRole])
+@app.get("/user_roles/", tags=["user"], response_model=List[m.UserRole])
 async def list_user_roles():
     cursor.execute("SELECT id, title FROM \"UserRole\"")
     roles_data = cursor.fetchall()

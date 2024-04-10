@@ -18,8 +18,7 @@ services:
     ports:
       - "9990:9990"
     container_name: taxi_instance
-    depends_on:
-      - postgres
+
   
   medic:
     build:
@@ -28,8 +27,7 @@ services:
     ports:
       - "9991:9991"
     container_name: medic_instance
-    depends_on:
-      - postgres
+
   
   kitmas:
     build:
@@ -38,6 +36,5 @@ services:
     ports:
       - "9999:9999"
     container_name: kitmas_instance
-    depends_on:
-      - postgres
+
   
