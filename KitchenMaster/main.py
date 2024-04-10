@@ -3,6 +3,7 @@ from fastapi.responses import FileResponse
 import psycopg2
 import httpx
 from typing import List
+import datetime
 
 import models as m
 
@@ -146,7 +147,7 @@ async def check_product_type(title: str) -> dict:
         return {"exists": False, "message": f"ProductType with title '{title}' does not exist."}
 
 
-@app.post("/product/", response_model=m.Product, status_code=status.HTTP_201_CREATED)
+@app.post("/product/", response_model=m.ProductModel, status_code=status.HTTP_201_CREATED)
 async def create_product(product: m.ProductCreate) -> m.ProductModel:
     # Проверяем, существует ли тип продукта, к которому мы хотим привязать наш продукт
     cursor.execute("SELECT EXISTS(SELECT 1 FROM \"ProductType\" WHERE id = %s)", (product.id_productType,))
@@ -163,7 +164,7 @@ async def create_product(product: m.ProductCreate) -> m.ProductModel:
     # Возвращаем созданный продукт
     return m.ProductModel(id=new_product_id, id_productType=product.id_productType, title=product.title)
 
-@app.post("/products/", response_model=List[m.Product], status_code=status.HTTP_201_CREATED)
+@app.post("/products/", response_model=List[m.ProductModel], status_code=status.HTTP_201_CREATED)
 async def create_products(products: List[m.ProductCreate]) -> List[m.ProductModel]:
     created_products = []
     for product in products:
@@ -182,6 +183,88 @@ async def create_products(products: List[m.ProductCreate]) -> List[m.ProductMode
     connection.commit()  # Подтверждаем транзакцию после добавления всех продуктов
 
     return created_products
+
+
+@app.post("/recipes/", response_model=m.RecipeModel, status_code=status.HTTP_201_CREATED)
+async def create_recipe(recipe_data: m.RecipeCreate) -> m.RecipeModel:
+    # Добавление рецепта в базу данных с новыми полями
+    cursor.execute(
+        "INSERT INTO \"Recipe\" (title, image_url, cooking_time, kkal, \"id_CreatorUser\") VALUES (%s, %s, %s, %s, %s) RETURNING id", 
+        (recipe_data.title, recipe_data.imageUrl, recipe_data.cookingTime, recipe_data.calories, recipe_data.creatorUserId)
+    )
+    new_recipe_id = cursor.fetchone()[0]
+    
+    # Добавление ингредиентов рецепта
+    for ingredient in recipe_data.ingredients:
+        cursor.execute(
+            "INSERT INTO \"RecipeIngredient\" (\"id_Product\", \"id_Recipe\", \"id_MeasureType\", count) VALUES (%s, %s, %s, %s)", 
+            (ingredient.productId, new_recipe_id, ingredient.measureTypeId, ingredient.quantity)
+        )
+    
+    # Добавление шагов приготовления
+    for step_index, step in enumerate(recipe_data.steps, start=1):
+        cursor.execute(
+            "INSERT INTO \"CookStep\" (\"id_Recipe\", step_num, step_text, step_image) VALUES (%s, %s, %s, %s)", 
+            (new_recipe_id, step_index, step.text, step.imageUrl)
+        )
+
+    connection.commit()
+    
+    # Возвращаем модель созданного рецепта. Необходимо определить RecipeModel, которая будет включать все поля рецепта.
+    return m.RecipeModel(
+        id=new_recipe_id,
+        title=recipe_data.title,
+        imageUrl=recipe_data.imageUrl,
+        cookingTime=recipe_data.cookingTime,
+        calories=recipe_data.calories,
+        creatorUserId=recipe_data.creatorUserId,
+        ingredients=recipe_data.ingredients,
+        steps=recipe_data.steps
+    )
+
+@app.post("/users/", status_code=status.HTTP_201_CREATED)
+async def create_user(user_data: m.UserCreate):
+    # Добавляем пользователя в базу данных
+    cursor.execute(
+        "INSERT INTO \"User\" (\"id_userRole\", name, region, birth_date, created_date) VALUES (%s, %s, %s, %s, %s) RETURNING id", 
+        (user_data.id_userRole, user_data.name, user_data.region, user_data.birth_date, user_data.created_date)
+    )
+    new_user_id = cursor.fetchone()[0]
+    connection.commit()
+    
+    # Возвращаем ID созданного пользователя
+    return {"id": new_user_id, "name": user_data.name}
+
+@app.post("/user_roles/", status_code=status.HTTP_201_CREATED)
+async def create_user_role(role_data: m.UserRoleCreate):
+    # Добавляем роль пользователя в базу данных
+    cursor.execute(
+        "INSERT INTO \"UserRole\" (title) VALUES (%s) RETURNING id", 
+        (role_data.title,)
+    )
+    new_role_id = cursor.fetchone()[0]
+    connection.commit()
+    
+    # Возвращаем ID и название созданной роли пользователя
+    return {"id": new_role_id, "title": role_data.title}
+
+@app.get("/users/", response_model=List[m.User])
+async def list_users():
+    cursor.execute("SELECT id, id_userRole, name, region, birth_date, created_date FROM \"User\"")
+    users_data = cursor.fetchall()
+    users = [m.User(id=row[0], id_userRole=row[1], name=row[2], region=row[3], birth_date=row[4], created_date=row[5]) for row in users_data]
+    return users
+
+
+@app.get("/user_roles/", response_model=List[m.UserRole])
+async def list_user_roles():
+    cursor.execute("SELECT id, title FROM \"UserRole\"")
+    roles_data = cursor.fetchall()
+    roles = [m.UserRole(id=row[0], title=row[1]) for row in roles_data]
+    return roles
+
+
+
 
 
 def db_get_recipes() -> List[m.Recipe]:

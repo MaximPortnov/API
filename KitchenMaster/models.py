@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from typing import List, Optional
+from datetime import datetime, date
 
 class Ingredient(BaseModel):
     id: Optional[int]
@@ -37,7 +38,7 @@ class Product(BaseModel):
 
 class ProductModel(BaseModel):
     id: Optional[int]
-    id_productType: int
+    id_productType: Optional[int]
     title: str
 
 class ProductType(BaseModel):
@@ -51,4 +52,68 @@ class ProductTypeCreate(BaseModel):
 
 class ProductCreate(BaseModel):
     id_productType: int
+    title: str
+
+
+
+class StepCreate(BaseModel):
+    text: str
+    imageUrl: Optional[str] = None
+
+class IngredientCreate(BaseModel):
+    productId: int
+    measureTypeId: int
+    quantity: float
+
+class RecipeCreate(BaseModel):
+    title: str
+    imageUrl: Optional[str] = None
+    cookingTime: Optional[str] = None  # Формат "HH:MM:SS"
+    calories: Optional[int] = None
+    creatorUserId: int
+    ingredients: List[IngredientCreate]
+    steps: List[StepCreate]
+
+
+class StepModel(BaseModel):
+    text: str
+    imageUrl: Optional[str]
+
+class IngredientModel(BaseModel):
+    productId: int
+    measureTypeId: int
+    quantity: float
+
+class RecipeModel(BaseModel):
+    id: int
+    title: str
+    imageUrl: Optional[str]
+    cookingTime: Optional[str]  # Формат "HH:MM:SS"
+    calories: Optional[int]
+    creatorUserId: int
+    ingredients: List[IngredientCreate]
+    steps: List[StepCreate]
+
+
+
+class UserCreate(BaseModel):
+    id_userRole: int
+    name: str
+    region: Optional[str] = None
+    birth_date: date
+    created_date: datetime = datetime.now()
+
+class UserRoleCreate(BaseModel):
+    title: str
+
+class User(BaseModel):
+    id: int
+    id_userRole: int
+    name: str
+    region: Optional[str] = None
+    birth_date: date
+    created_date: datetime
+
+class UserRole(BaseModel):
+    id: int
     title: str

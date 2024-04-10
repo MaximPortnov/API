@@ -1102,106 +1102,42 @@ ALTER TABLE ONLY public."User"
 ALTER TABLE ONLY public."CookStep"
     ADD CONSTRAINT "CookStep_id_Recipe_fkey" FOREIGN KEY ("id_Recipe") REFERENCES public."Recipe"(id);
 
-
---
--- Name: Product Product_id_productType_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
 ALTER TABLE ONLY public."Product"
     ADD CONSTRAINT "Product_id_productType_fkey" FOREIGN KEY ("id_productType") REFERENCES public."ProductType"(id);
-
-
---
--- Name: RecipeCategory RecipeCategory_id_Category_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
 
 ALTER TABLE ONLY public."RecipeCategory"
     ADD CONSTRAINT "RecipeCategory_id_Category_fkey" FOREIGN KEY ("id_Category") REFERENCES public."Category"(id);
 
 
---
--- Name: RecipeCategory RecipeCategory_id_Recipe_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
 ALTER TABLE ONLY public."RecipeCategory"
     ADD CONSTRAINT "RecipeCategory_id_Recipe_fkey" FOREIGN KEY ("id_Recipe") REFERENCES public."Recipe"(id);
-
-
---
--- Name: RecipeIngredient RecipeIngredient_id_MeasureType_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
 
 ALTER TABLE ONLY public."RecipeIngredient"
     ADD CONSTRAINT "RecipeIngredient_id_MeasureType_fkey" FOREIGN KEY ("id_MeasureType") REFERENCES public."MeasureType"(id);
 
-
---
--- Name: RecipeIngredient RecipeIngredient_id_Product_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
 ALTER TABLE ONLY public."RecipeIngredient"
     ADD CONSTRAINT "RecipeIngredient_id_Product_fkey" FOREIGN KEY ("id_Product") REFERENCES public."Product"(id);
-
-
---
--- Name: RecipeIngredient RecipeIngredient_id_Recipe_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
 
 ALTER TABLE ONLY public."RecipeIngredient"
     ADD CONSTRAINT "RecipeIngredient_id_Recipe_fkey" FOREIGN KEY ("id_Recipe") REFERENCES public."Recipe"(id);
 
-
---
--- Name: Recipe Recipe_id_CreatorUser_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
 ALTER TABLE ONLY public."Recipe"
     ADD CONSTRAINT "Recipe_id_CreatorUser_fkey" FOREIGN KEY ("id_CreatorUser") REFERENCES public."User"(id);
-
-
---
--- Name: UserCredential UserCredential_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
 
 ALTER TABLE ONLY public."UserCredential"
     ADD CONSTRAINT "UserCredential_id_fkey" FOREIGN KEY (id) REFERENCES public."User"(id);
 
-
---
--- Name: UserProduct UserProduct_id_Product_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
 ALTER TABLE ONLY public."UserProduct"
     ADD CONSTRAINT "UserProduct_id_Product_fkey" FOREIGN KEY ("id_Product") REFERENCES public."Product"(id);
-
-
---
--- Name: UserProduct UserProduct_id_User_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
 
 ALTER TABLE ONLY public."UserProduct"
     ADD CONSTRAINT "UserProduct_id_User_fkey" FOREIGN KEY ("id_User") REFERENCES public."User"(id);
 
-
---
--- Name: UserRecipe UserRecipe_id_Recipe_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
 ALTER TABLE ONLY public."UserRecipe"
     ADD CONSTRAINT "UserRecipe_id_Recipe_fkey" FOREIGN KEY ("id_Recipe") REFERENCES public."Recipe"(id);
 
-
---
--- Name: UserRecipe UserRecipe_id_User_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
 ALTER TABLE ONLY public."UserRecipe"
     ADD CONSTRAINT "UserRecipe_id_User_fkey" FOREIGN KEY ("id_User") REFERENCES public."User"(id);
-
-
---
--- Name: User User_id_userRole_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
 
 ALTER TABLE ONLY public."User"
     ADD CONSTRAINT "User_id_userRole_fkey" FOREIGN KEY ("id_userRole") REFERENCES public."UserRole"(id);
